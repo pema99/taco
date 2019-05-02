@@ -11,7 +11,8 @@ namespace BadLang
             Lexer l = new Lexer();
             Parser p = new Parser();
             var o = p.Parse(l.ScanTokens(File.ReadAllText("example.bl")));
-            new Compiler().Compile(o);
+            Binary b = new Compiler().Compile(o);
+            new VM().Execute(b);
             Console.ReadKey();
         }
     }

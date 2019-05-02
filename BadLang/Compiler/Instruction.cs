@@ -6,8 +6,14 @@ namespace BadLang
     {
         VAR_ASSIGN,
         PRINT,
+        PRINTLN,
         CONST,
         RETURN,
+        ADD,
+        SUB,
+        MUL,
+        DIV,
+        VAR_LOOKUP,
     }
 
     public static class InstructionLength
@@ -16,8 +22,14 @@ namespace BadLang
         {
             1,
             0,
+            0,
             1,
             0,
+            0,
+            0,
+            0,
+            0,
+            1,
         };
     }
 }

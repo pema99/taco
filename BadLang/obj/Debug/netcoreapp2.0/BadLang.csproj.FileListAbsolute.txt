@@ -10,3 +10,13 @@ C:\Users\Pema Malling\source\repos\BadLang\BadLang\bin\Debug\netcoreapp2.0\BadLa
 C:\Users\Pema Malling\source\repos\BadLang\BadLang\bin\Debug\netcoreapp2.0\BadLang.pdb
 C:\Users\Pema Malling\source\repos\BadLang\BadLang\obj\Debug\netcoreapp2.0\BadLang.dll
 C:\Users\Pema Malling\source\repos\BadLang\BadLang\obj\Debug\netcoreapp2.0\BadLang.pdb
+C:\Users\Pema Malling\Desktop\taco\BadLang\bin\Debug\netcoreapp2.0\BadLang.deps.json
+C:\Users\Pema Malling\Desktop\taco\BadLang\bin\Debug\netcoreapp2.0\BadLang.runtimeconfig.json
+C:\Users\Pema Malling\Desktop\taco\BadLang\bin\Debug\netcoreapp2.0\BadLang.runtimeconfig.dev.json
+C:\Users\Pema Malling\Desktop\taco\BadLang\obj\Debug\netcoreapp2.0\BadLang.csprojResolveAssemblyReference.cache
+C:\Users\Pema Malling\Desktop\taco\BadLang\obj\Debug\netcoreapp2.0\BadLang.AssemblyInfo.cs
+C:\Users\Pema Malling\Desktop\taco\BadLang\obj\Debug\netcoreapp2.0\BadLang.dll
+C:\Users\Pema Malling\Desktop\taco\BadLang\obj\Debug\netcoreapp2.0\BadLang.pdb
+C:\Users\Pema Malling\Desktop\taco\BadLang\bin\Debug\netcoreapp2.0\example.bl
+C:\Users\Pema Malling\Desktop\taco\BadLang\bin\Debug\netcoreapp2.0\BadLang.dll
+C:\Users\Pema Malling\Desktop\taco\BadLang\bin\Debug\netcoreapp2.0\BadLang.pdb

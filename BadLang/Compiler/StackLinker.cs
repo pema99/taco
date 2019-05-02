@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace BadLang.Compiler
+namespace BadLang
 {
-    public class StackLinker
+    public class SemanticPass
     {
     }
 }

@@ -10,7 +10,7 @@ namespace BadLang
         private List<Token> tokens;
         private Dictionary<string, FuncDecl> functions;
 
-        public Dictionary<string, FuncDecl> Parse(List<Token> tokens)
+        public RawAST Parse(List<Token> tokens)
         {
             this.tokens = tokens;
             this.start = 0;
@@ -36,7 +36,7 @@ namespace BadLang
                 }
             }
 
-            return functions;
+            return new RawAST(functions);
         }
 
         private Expression ParseStatement()

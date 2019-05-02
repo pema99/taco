@@ -1,7 +1,15 @@
 ﻿func main() {
-	var a
-	a -= 2
-	print a
-	a = 7
-	print a
+	var c = 5
+	c -= 2
+	println c
+	
+    c = 7
+	println c
+    
+    var d = "hello"
+    println d
+
+    println 64
+
+    return 0
 }
