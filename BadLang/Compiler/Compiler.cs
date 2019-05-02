@@ -19,8 +19,9 @@ namespace BadLang
 
         public Binary Compile(RawAST ast)
         {
-            UnlinkedAST ir = codeGenerator.Process(semantic.Process(ast));
-            
+            UnlinkedAST ir = codeGenerator.Process(semantic.Process(ast));           
+            Binary b = linker.Process(ir);
+
             Console.WriteLine("=== Symbols ===");
             foreach (var symbol in ir.Symbols)
             {
@@ -29,7 +30,7 @@ namespace BadLang
             Console.WriteLine();
 
             Console.WriteLine("=== Instructions ===");
-            for (int i = 0; i < ir.Instructions.Length; i++)
+            for (int i = 0; i < b.Instructions.Length; i++)
             {
                 //Display labels
                 foreach (var symbol in ir.Symbols.Where(x => x.Value == i))
@@ -38,19 +39,19 @@ namespace BadLang
                 }
 
                 //Display instruction
-                Console.Write("    " + typeof(Instruction).GetEnumName((Instruction)(int)ir.Instructions[i]) + " ");
+                Console.Write("    " + typeof(Instruction).GetEnumName((Instruction)(int)b.Instructions[i]) + " ");
 
                 //Display parameters
-                int length = InstructionLength.Length[ir.Instructions[i]];
+                int length = InstructionLength.Length[b.Instructions[i]];
                 for (int j = 0; j < length; j++)
                 {
-                    Console.Write(ir.Instructions[++i] + " ");
+                    Console.Write(b.Instructions[++i] + " ");
                 }
                 Console.WriteLine();
             }
             Console.WriteLine();
 
-            return linker.Process(ir);
+            return b;
         }
     }
 }

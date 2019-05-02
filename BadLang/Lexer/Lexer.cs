@@ -15,19 +15,18 @@ namespace BadLang
 
         public Lexer()
         {
-            keywords = new Dictionary<string, TokenType>(); 
-            keywords.Add("else", TokenType.Else);
-            keywords.Add("false", TokenType.False);
-            keywords.Add("for", TokenType.For);
-            keywords.Add("func", TokenType.Func);
+            keywords = new Dictionary<string, TokenType>();
             keywords.Add("if", TokenType.If);
-            keywords.Add("null", TokenType.Null);
+            keywords.Add("else", TokenType.Else);
+            keywords.Add("true", TokenType.True);
+            keywords.Add("false", TokenType.False);
+            keywords.Add("loop", TokenType.Loop);
+            keywords.Add("break", TokenType.Break);
+            keywords.Add("func", TokenType.Func);        
             keywords.Add("print", TokenType.Print);
             keywords.Add("println", TokenType.PrintLine);
-            keywords.Add("return", TokenType.Return);
-            keywords.Add("true", TokenType.True);
-            keywords.Add("var", TokenType.Var);
-            keywords.Add("while", TokenType.While);
+            keywords.Add("return", TokenType.Return);        
+            keywords.Add("var", TokenType.Var);           
             keywords.Add("line", TokenType.Line);
             keywords.Add("key", TokenType.Key);
             keywords.Add("cls", TokenType.Clear);
@@ -56,45 +55,40 @@ namespace BadLang
             char c = Advance();
             switch (c)
             {
-                //Tokens
                 case '(': AddToken(TokenType.Left_Paren); break;
                 case ')': AddToken(TokenType.Right_Paren); break;
                 case '{': AddToken(TokenType.Left_Brace); break;
                 case '}': AddToken(TokenType.Right_Brace); break;
-                case '[': AddToken(TokenType.Left_Square); break;
-                case ']': AddToken(TokenType.Right_Square); break;
                 case ',': AddToken(TokenType.Comma); break;
                 case '.': AddToken(TokenType.Dot); break;
+
                 case '-': AddToken(Match('=') ? TokenType.Minus_Equal : Match('-') ? TokenType.Minus_Minus : TokenType.Minus); break;
                 case '+': AddToken(Match('=') ? TokenType.Plus_Equal : Match('+') ? TokenType.Plus_Plus : TokenType.Plus); break;
                 case '*': AddToken(Match('=') ? TokenType.Star_Equal : TokenType.Star); break;
                 case '/': AddToken(Match('=') ? TokenType.Slash_Equal : TokenType.Slash); break;
 
-                //Operators
+                case '&': AddToken(Match('=') ? TokenType.And_Equal : Match('&') ? TokenType.And_And : TokenType.And); break;
+                case '|': AddToken(Match('=') ? TokenType.Or_Equal : Match('|') ? TokenType.Or_Or : TokenType.Or); break;
+                case '^': AddToken(Match('=') ? TokenType.Xor_Equal : Match('^') ? TokenType.Xor_Xor : TokenType.Xor); break;
+
                 case '!': AddToken(Match('=') ? TokenType.Bang_Equal : TokenType.Bang); break;
                 case '=': AddToken(Match('=') ? TokenType.Equal_Equal : TokenType.Equal); break;
                 case '<': AddToken(Match('=') ? TokenType.Less_Equal : TokenType.Less); break;
                 case '>': AddToken(Match('=') ? TokenType.Greater_Equal : TokenType.Greater); break;
-                case '&': if (Match('&')) AddToken(TokenType.And); break;
-                case '|': if (Match('|')) AddToken(TokenType.Or); break;
-                case '^': if (Match('^')) AddToken(TokenType.Xor); break;
 
-                //Literals
-                case '"': String(); break;
+                case '"': ScanString(); break;
 
-                //Whitespace
-                case ' ': break;
-                case '\r': break;
+                case ' ':
+                case '\r':
                 case '\t': break;
                 case '\n': line++; break;
 
-                //Comments
-                case '\'': Comment(); break;
+                case '\'': ScanComment(); break;
 
                 default:
                     if (IsDigit(c))
                     {
-                        Number();
+                        ScanNumber();
                     }
                     else if (IsAlpha(c))
                     {
@@ -102,12 +96,13 @@ namespace BadLang
                     }
                     else
                     {
-                        throw new Exception("Unexpected symbol \'" + c + "\' at line " + line);
+                        throw new Exception(string.Format("Lexer error: Unexpected symbol '{0}' at line {1}.", c, line));
                     }
                     break;
             }
         }
 
+        #region Lexemes
         private void Identifier()
         {
             while (IsAlphaNumeric(Peek()))
@@ -115,10 +110,10 @@ namespace BadLang
                 Advance();
             }
 
-            string Text = source.Substring(start, current - start);
-            if (keywords.ContainsKey(Text))
+            string text = source.Substring(start, current - start);
+            if (keywords.ContainsKey(text))
             {
-                AddToken(keywords[Text]);
+                AddToken(keywords[text]);
             }
 
             else
@@ -127,24 +122,7 @@ namespace BadLang
             }
         }
 
-        private bool IsAlpha(char c)
-        {
-            return (c >= 'a' && c <= 'z') ||
-                   (c >= 'A' && c <= 'Z') ||
-                    c == '_';
-        }
-
-        private bool IsDigit(char c)
-        {
-            return c >= '0' && c <= '9';
-        }
-
-        private bool IsAlphaNumeric(char c)
-        {
-            return IsAlpha(c) || IsDigit(c);
-        }
-
-        private void Number()
+        private void ScanNumber()
         {
             while (IsDigit(Peek()))
             {
@@ -162,7 +140,7 @@ namespace BadLang
             AddToken(TokenType.Number, float.Parse(source.Substring(start, current - start), CultureInfo.InvariantCulture));
         }
 
-        private void String()
+        private void ScanString()
         {
             while (Peek() != '"' && current < source.Length)
             {
@@ -174,21 +152,23 @@ namespace BadLang
             }
             if (current >= source.Length)
             {
-                throw new Exception("Unterminated string at line " + line);
+                throw new Exception(string.Format("Lexer error: Unterminated string at line {0}.", line));
             }
             Advance();
 
             AddToken(TokenType.String, source.Substring(start+1, (current-1)-(start+1)));
         }
 
-        private void Comment()
+        private void ScanComment()
         {
             while (Peek() != '\n' && current < source.Length - 1)
             {
                 Advance();
             }
         }
+        #endregion
 
+        #region Helpers
         private char Peek()
         {
             return source[current];
@@ -220,5 +200,23 @@ namespace BadLang
             String text = source.Substring(start, current-start);
             tokens.Add(new Token(type, text, literal, line));
         }
+
+        private bool IsAlpha(char c)
+        {
+            return (c >= 'a' && c <= 'z') ||
+                   (c >= 'A' && c <= 'Z') ||
+                    c == '_';
+        }
+
+        private bool IsDigit(char c)
+        {
+            return c >= '0' && c <= '9';
+        }
+
+        private bool IsAlphaNumeric(char c)
+        {
+            return IsAlpha(c) || IsDigit(c);
+        }
+        #endregion
     }
 }

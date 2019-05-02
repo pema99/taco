@@ -14,9 +14,6 @@ namespace BadLang
             this.ReturnExpression = returnExpression;
         }
 
-        public Block()
-            : this(new List<Expression>(), null)
-        {
-        }
+        public Block() : this(new List<Expression>(), null) { }
     }
 }

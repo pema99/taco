@@ -6,13 +6,13 @@ namespace BadLang
 {
     public class CheckedAST
     {
-        public Dictionary<string, FuncDecl> Functions { get; private set; }
-        public Dictionary<string, int> Identifiers { get; private set; }
+        public Dictionary<string, FuncDeclaration> Functions { get; private set; }
+        public Dictionary<string, Scope> Scopes { get; private set; }
 
-        public CheckedAST(Dictionary<string, FuncDecl> functions, Dictionary<string, int> identifiers)
+        public CheckedAST(Dictionary<string, FuncDeclaration> functions, Dictionary<string, Scope> scopes)
         {
             this.Functions = functions;
-            this.Identifiers = identifiers;
+            this.Scopes = scopes;
         }
     }
 }

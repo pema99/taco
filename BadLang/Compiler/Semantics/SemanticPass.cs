@@ -8,19 +8,19 @@ namespace BadLang
     public class SemanticPass
     {
         private Scope currentScope;
-        private Dictionary<string, int> identifiers;
 
         public CheckedAST Process(RawAST ast)
         {
-            identifiers = new Dictionary<string, int>();
-            foreach (FuncDecl func in ast.Functions.Values)
+            Dictionary<string, Scope> scopes = new Dictionary<string, Scope>();   
+            foreach (FuncDeclaration func in ast.Functions.Values)
             {
                 CheckDeclaration(func);
+                scopes.Add(func.Name, currentScope);
             }
-            return new CheckedAST(ast.Functions, identifiers);
+            return new CheckedAST(ast.Functions, scopes);
         }
 
-        private void CheckDeclaration(FuncDecl func)
+        private void CheckDeclaration(FuncDeclaration func)
         {
             currentScope = new Scope(null, new Dictionary<string, int>(), 0);
             foreach (string param in func.Parameters)
@@ -32,21 +32,33 @@ namespace BadLang
             {
                 CheckExpression(expr);
             }
-
-            currentScope.Symbols.ToList().ForEach(x => identifiers.Add(x.Key, x.Value));
         }
 
         private void CheckExpression(Expression expr)
         {
             switch (expr)
             {
-                //Statements
                 case VariableDeclarationExpr e:
+                    if (currentScope.GetSymbol(e.Name) != -1)
+                    {
+                        throw new Exception(string.Format("Compiler error: Variable '{0}' already exists." + e.Name));
+                    }
                     currentScope.AddSymbol(e.Name);
                     break;
 
-                case VariableAssigmentExpr e: //TODO CHECK IF VARIABLE EXISTS
+                case VariableAssigmentExpr e: 
+                    if (currentScope.GetSymbol(e.Name) == -1)
+                    {
+                        throw new Exception(string.Format("Compiler error: Variable '{0}' does not exist." + e.Name));
+                    }
                     CheckExpression(e.Expr);
+                    break;
+
+                case VariableLookupExpr e:
+                    if (currentScope.GetSymbol(e.Name) == -1)
+                    {
+                        throw new Exception(string.Format("Compiler error: Variable '{0}' does not exist.", e.Name));
+                    }
                     break;
 
                 case ReturnExpr e:
@@ -57,30 +69,16 @@ namespace BadLang
                     CheckExpression(e.Expr);
                     break;
 
-                //Expression
                 case BinaryExpr e:
                     CheckExpression(e.Left);
-                    CheckExpression(e.Right); //TODO: Typecheck?
-                    break;
-
-                case ConstantExpr e:
+                    CheckExpression(e.Right);
                     break;
 
                 case FunctionCallExpr e:
-                    if (currentScope.GetSymbol(e.Name) != -1)
+                    foreach (Expression param in e.Parameters)
                     {
-                        foreach (Expression param in e.Parameters)
-                        {
-                            CheckExpression(param);
-                        }
+                        CheckExpression(param);
                     }
-                    else
-                    {
-                        throw new Exception("Couldn't find function");
-                    }
-                    break;
-
-                case VariableLookupExpr e: //TODO Check if variable exists
                     break;
 
                 case BlockExpr e:
@@ -94,8 +92,16 @@ namespace BadLang
                     CheckBlock(e.No);
                     break;
 
+                case UnaryExpr e:
+                    CheckExpression(e.Expr);
+                    break;
+
+                case LoopExpr e:
+                    CheckBlock(e.Body);
+                    break;
+
                 default:
-                    throw new Exception("Unimplemented: " + expr);
+                    break;
             }
         }
 

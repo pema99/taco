@@ -4,9 +4,9 @@ namespace BadLang
 {
     public class RawAST
     {
-        public Dictionary<string, FuncDecl> Functions { get; private set; }
+        public Dictionary<string, FuncDeclaration> Functions { get; private set; }
 
-        public RawAST(Dictionary<string, FuncDecl> functions)
+        public RawAST(Dictionary<string, FuncDeclaration> functions)
         {
             this.Functions = functions;
         }

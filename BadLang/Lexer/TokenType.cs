@@ -1,35 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BadLang
+﻿namespace BadLang
 {
     public enum TokenType
     {
-        //Language stuff
-        Left_Paren, Right_Paren, Left_Brace, Right_Brace,
-        Left_Square, Right_Square,
-        Comma, Dot, Minus, Plus, Slash, Star,
+        Left_Paren, Right_Paren,
+        Left_Brace, Right_Brace,
+        Comma, Dot,   
 
-        //Operators
         Bang, Bang_Equal,
         Equal, Equal_Equal,
         Greater, Greater_Equal,
         Less, Less_Equal,
-        And, Or, Xor,
-        Plus_Equal, Plus_Plus, Minus_Equal, Minus_Minus, Star_Equal, Slash_Equal,
 
-        //Literals n stuff
+        And, And_And, And_Equal,
+        Or, Or_Or, Or_Equal,
+        Xor, Xor_Xor, Xor_Equal,
+
+        Plus, Plus_Equal, Plus_Plus,
+        Minus, Minus_Equal, Minus_Minus,
+        Star, Star_Equal,
+        Slash, Slash_Equal,
+
         Identifier, String, Number,
 
-        //Reserved words
-        Else, False, Func, For, If, Null,
-        Print, PrintLine, Return, True,
-        Var, While, Line, Key, Clear,
+        Else, False, Func, Loop, Break,
+        If, Null, Print, PrintLine,
+        Return, True, Var, Line,
+        Key, Clear,
 
-        //End of file
         EOF
     }
 }

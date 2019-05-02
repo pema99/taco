@@ -7,12 +7,14 @@ namespace BadLang
     public class VM
     {
         private Stack<Variant> stack;
+        private Stack<int> callStack;
         private Variant[] variables;
         private byte[] heap;
 
         public void Execute(Binary b)
         {
             this.stack = new Stack<Variant>();
+            this.callStack = new Stack<int>();
             this.heap = b.Heap;
             this.variables = new Variant[1000];
 
@@ -68,6 +70,9 @@ namespace BadLang
                     case Instruction.SUB:
                     case Instruction.MUL:
                     case Instruction.DIV:
+                    case Instruction.LESS:
+                    case Instruction.GREATER:
+                    case Instruction.EQUAL:
                         Variant right = stack.Pop();
                         Variant left = stack.Pop();
                         if (right.Type != left.Type)
@@ -76,31 +81,62 @@ namespace BadLang
                         }
                         if (right.Type == VariantType.Number)
                         {
-                            float result = 0;
                             switch (current)
                             {
                                 case Instruction.ADD:
-                                    result = left.Number + right.Number;
+                                    stack.Push(new Variant(left.Number + right.Number));
                                     break;
 
                                 case Instruction.SUB:
-                                    result = left.Number - right.Number;
+                                    stack.Push(new Variant(left.Number - right.Number));
                                     break;
 
                                 case Instruction.MUL:
-                                    result = left.Number * right.Number;
+                                    stack.Push(new Variant(left.Number * right.Number));
                                     break;
 
                                 case Instruction.DIV:
-                                    result = left.Number / right.Number;
+                                    stack.Push(new Variant(left.Number / right.Number));
+                                    break;
+
+                                case Instruction.LESS:
+                                    stack.Push(new Variant(left.Number < right.Number));
+                                    break;
+
+                                case Instruction.GREATER:
+                                    stack.Push(new Variant(left.Number > right.Number));
+                                    break;
+
+                                case Instruction.EQUAL:
+                                    stack.Push(new Variant(left.Number == right.Number));
                                     break;
                             }
-                            stack.Push(new Variant(result));
                         }
                         break;
 
                     case Instruction.RETURN:
-                        return; //TODO: Calling
+                        if (callStack.Count == 0)
+                        {
+                            return;
+                        }
+                        pc = callStack.Pop();
+                        break;
+
+                    case Instruction.CALL:
+                        callStack.Push(pc + 1);
+                        pc = b.Instructions[pc + 1].Pointer - 1;
+                        break;
+
+                    case Instruction.JMP_IF_NOT:
+                        Variant cond = stack.Pop();
+                        if (cond.Pointer == 0)
+                        {
+                            pc = b.Instructions[pc + 1].Pointer - 1;
+                        }
+                        else
+                        {
+                            pc++;
+                        }
                         break;
                 }
                 pc++;

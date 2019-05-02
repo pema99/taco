@@ -9,19 +9,23 @@ namespace BadLang
     {
         private List<Variant> instructions;
         private Dictionary<string, int> symbols;
-        private Dictionary<string, int> identifiers;
+        private Dictionary<string, Scope> scopes;
+        private List<(string, int)> unlinked;
         private byte[] heap;
         private int heapPtr;
+        private int tempLabelNum;
 
         public UnlinkedAST Process(CheckedAST ast)
         {
             instructions = new List<Variant>();
             symbols = new Dictionary<string, int>();
-            identifiers = ast.Identifiers;
+            scopes = ast.Scopes;
+            unlinked = new List<(string, int)>();
             heap = new byte[1000];
             heapPtr = 0;
+            tempLabelNum = 0;
 
-            foreach (FuncDecl func in ast.Functions.Values)
+            foreach (FuncDeclaration func in ast.Functions.Values)
             {
                 symbols.Add(func.Name, instructions.Count);;
 
@@ -32,46 +36,48 @@ namespace BadLang
 
                 foreach (Expression statement in func.Body.Statements)
                 {
-                    CompileExpression(statement);
+                    CompileExpression(statement, scopes[func.Name]);
                 }
             }
 
-            return new UnlinkedAST(instructions.ToArray(), symbols, identifiers, heap);
+            return new UnlinkedAST(instructions.ToArray(), symbols, unlinked, heap);
         }
 
-        private void CompileExpression(Expression expression)
+        private void CompileExpression(Expression expression, Scope scope)
         {
             switch (expression)
             {
-                //Statements
                 case ReturnExpr e:
-                    CompileExpression(e.Expr);
+                    CompileExpression(e.Expr, scope);
                     AddInstruction(Instruction.RETURN);
                     break;
 
                 case PrintExpr e:
-                    CompileExpression(e.Expr);
+                    CompileExpression(e.Expr, scope);
                     AddInstruction(e.NewLine ? Instruction.PRINTLN : Instruction.PRINT);
                     break;
 
                 case VariableDeclarationExpr e:
-                    CompileExpression(e.Expr);
-                    AddInstruction(Instruction.VAR_ASSIGN, new Variant(identifiers[e.Name]));
+                    CompileExpression(e.Expr, scope);
+                    AddInstruction(Instruction.VAR_ASSIGN, new Variant(scope.Symbols[e.Name]));
                     break;
 
                 case VariableAssigmentExpr e:
-                    CompileExpression(e.Expr);
-                    AddInstruction(Instruction.VAR_ASSIGN, new Variant(identifiers[e.Name]));
+                    CompileExpression(e.Expr, scope);
+                    AddInstruction(Instruction.VAR_ASSIGN, new Variant(scope.Symbols[e.Name]));
                     break;
 
-                //Expressions
                 case VariableLookupExpr e:
-                    AddInstruction(Instruction.VAR_LOOKUP, new Variant(identifiers[e.Name]));
+                    AddInstruction(Instruction.VAR_LOOKUP, new Variant(scope.Symbols[e.Name]));
+                    break;
+
+                case ClearConsoleExpr e:
+                    AddInstruction(Instruction.CLS);
                     break;
 
                 case BinaryExpr e:
-                    CompileExpression(e.Left);
-                    CompileExpression(e.Right);
+                    CompileExpression(e.Left, scope);
+                    CompileExpression(e.Right, scope);
 
                     switch (e.Operation)
                     {
@@ -89,8 +95,18 @@ namespace BadLang
                         case TokenType.Slash_Equal:
                         case TokenType.Slash: AddInstruction(Instruction.DIV); break;
 
+                        case TokenType.Less_Equal:
+                        case TokenType.Less: AddInstruction(Instruction.LESS); break;
+
+                        case TokenType.Greater_Equal:
+                        case TokenType.Greater: AddInstruction(Instruction.GREATER); break;
+                            break;
+
+                        case TokenType.Equal_Equal:
+                        case TokenType.Equal: AddInstruction(Instruction.EQUAL); break;
+
                         default:
-                            throw new Exception("Unimplemented");
+                            throw new Exception("Unimplemented binary operation");
                             break;
                     }
                     break;
@@ -116,12 +132,40 @@ namespace BadLang
                             break;
                     }
                     break;
+
+                case FunctionCallExpr e:
+                    foreach (Expression param in e.Parameters)
+                    {
+                        CompileExpression(param, scope);
+                    }
+                    AddInstruction(Instruction.CALL, 0);
+                    unlinked.Add((e.Name, instructions.Count - 2));
+                    break;
+
+                case ConditionalExpr e:
+                    CompileExpression(e.Condition, scope);
+
+                    AddInstruction(Instruction.JMP_IF_NOT, 0);
+
+                    string label = "_" + tempLabelNum++;
+
+                    unlinked.Add((label, instructions.Count - 2));
+
+                    CompileBlock(e.Yes, scope);
+
+                    symbols.Add(label, instructions.Count);
+
+                    CompileBlock(e.No, scope);
+                    break;
             }
         }
 
-        private void CompileBlock(Block block)
+        private void CompileBlock(Block block, Scope scope)
         {
-
+            foreach (Expression expr in block.Statements)
+            {
+                CompileExpression(expr, scope);
+            }
         }
 
         private void AddInstruction(Instruction instr)

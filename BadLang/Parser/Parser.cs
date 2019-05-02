@@ -5,34 +5,32 @@ namespace BadLang
 {
     public class Parser
     {
-        private int start;
         private int current;
         private List<Token> tokens;
-        private Dictionary<string, FuncDecl> functions;
+        private Dictionary<string, FuncDeclaration> functions;
 
         public RawAST Parse(List<Token> tokens)
         {
-            this.tokens = tokens;
-            this.start = 0;
             this.current = 0;
-            this.functions = new Dictionary<string, FuncDecl>();
+            this.tokens = tokens;
+            this.functions = new Dictionary<string, FuncDeclaration>();
 
             while (!IsAtEnd())
             {
                 if (Match(TokenType.Func))
                 {
-                    FuncDecl func = ParseFunc();
+                    FuncDeclaration func = ParseFunc();
 
                     if (functions.ContainsKey(func.Name))
                     {
-                        throw new Exception("Variable \'" + func.Name + "\' already declared");
+                        throw new Exception(string.Format("Parser error: Variable {0} already declared.", func.Name));
                     }
 
                     functions.Add(func.Name, func);
                 }
                 else
                 {
-                    throw new Exception("Invalid token \'" + Peek().Lexeme + "\' at line " + Peek().Line + ", only functions are allowed in global scope.");
+                    throw new Exception(string.Format("Parser error: Invalid token '{0}' at line '{1}', only functions are allowed in global scope.", Peek().Lexeme, Peek().Line));
                 }
             }
 
@@ -56,24 +54,20 @@ namespace BadLang
                 case TokenType.If:
                     return ParseConditional();
 
-                /*case TokenType.While:
-                    return While();*/
+                case TokenType.Loop:
+                    return ParseLoop();
 
                 case TokenType.Left_Brace:
                     return new BlockExpr(ParseBlock());
 
-                /*case TokenType.Clear:
-                    return ClearConsole();*/
+                case TokenType.Clear:
+                    return ParseClearConsole();
 
                 case TokenType.Return:
                     return ParseReturn();
 
-                /*case TokenType.For:
-                    return For();*/
-
                 default:
-                    throw new Exception("Unexpected token: \'" + Peek().Type + "\' at line " + Peek().Line + ".");
-                    break;
+                    throw new Exception(string.Format("Parser error: Unexpected token '{0}' at line {1}.", Peek().Type, Peek().Line));
             }
         }
 
@@ -92,7 +86,7 @@ namespace BadLang
         }
 
         #region Statement parsing
-        private FuncDecl ParseFunc()
+        private FuncDeclaration ParseFunc()
         {
             Advance(TokenType.Func);
             Token identifier = identifier = Advance(TokenType.Identifier);
@@ -108,20 +102,20 @@ namespace BadLang
                     {
                         if (parameters.Contains(param.Lexeme))
                         {
-                            throw new Exception("Error at line " + param.Line + ". Two parameters with the same name are not allowed in a function declaration.");
+                            throw new Exception(string.Format("Parser error: At line {0}. Two parameters with the same name are not allowed in a function declaration.", param.Line));
                         }
                         parameters.Add(param.Lexeme);
                     }
                     else if (param.Type == TokenType.Comma);
                     else
                     {
-                        throw new Exception("Error at line " + param.Line + ". Only identifiers are allowed in function declarations.");
+                        throw new Exception(string.Format("Parser error: At line {0}. Only identifiers are allowed in function declarations.", param.Line));
                     }
                 }
             }
             Advance(TokenType.Right_Paren);
 
-            return new FuncDecl(identifier.Lexeme, ParseBlock(), parameters.ToArray());
+            return new FuncDeclaration(identifier.Lexeme, ParseBlock(), parameters.ToArray());
         }
 
         private VariableDeclarationExpr ParseVariableDeclaration()
@@ -199,13 +193,11 @@ namespace BadLang
                     Advance(TokenType.Equal);
                     return new VariableAssigmentExpr(identifier.Lexeme, ParseExpression());
 
-                //case TokenType.Left_Square:
-
                 case TokenType.Left_Paren:
                     return ParseFuncCall();
 
                 default:
-                    throw new Exception("Invalid token \'" + tokens[current + 1].Type + "\' after Identifier on line " + identifier.Line);
+                    throw new Exception(string.Format("Parser error: Invalid token '{0}' after Identifier on line {1}", tokens[current + 1].Type, identifier.Line));
             }
         }
 
@@ -221,47 +213,20 @@ namespace BadLang
             return new ReturnExpr(ParseExpression());
         }
 
-        /*private ClearConsoleExpr ClearConsole()
+        private ClearConsoleExpr ParseClearConsole()
         {
             Advance(TokenType.Clear);
             return new ClearConsoleExpr();
-        }*/
-
-        /*private WhileExpr While()
-        {
-            Advance(TokenType.While);
-            Advance(TokenType.Left_Paren);
-
-            Expression Condition = Expression();
-
-            Advance(TokenType.Right_Paren);
-
-            ScopeInfo Body = ParseBlock();
-
-            return new WhileExpr(Condition, Body);
         }
 
-        private ForExpr For()
+        private LoopExpr ParseLoop()
         {
-            Advance(TokenType.For);
-            Advance(TokenType.Left_Paren);
+            Advance(TokenType.Loop);
 
-            Expression Initial = ParseStatement();
+            Block body = ParseBlock();
 
-            Advance(TokenType.Comma);
-
-            Expression Condition = Expression();
-
-            Advance(TokenType.Comma);
-
-            Expression Iteration = ParseStatement();
-
-            Advance(TokenType.Right_Paren);
-
-            ScopeInfo Body = ParseBlock();
-
-            return new ForExpr(Initial, Condition, Iteration, Body);
-        }*/
+            return new LoopExpr(body);
+        }
 
         private ConditionalExpr ParseConditional()
         {
@@ -300,10 +265,11 @@ namespace BadLang
         {
             Expression Higher = ParseTerm();
 
-            //+ | - | == | != | <= | >= | < | > | && | || | ^^
+            //+ | - | == | != | <= | >= | < | > | && | || | ^^ | & | | | ^
             while (Match(TokenType.Plus) || Match(TokenType.Minus) || Match(TokenType.Equal_Equal) || Match(TokenType.Bang_Equal)
                ||  Match(TokenType.Less) || Match(TokenType.Less_Equal) || Match(TokenType.Greater) || Match(TokenType.Greater_Equal)
-               ||  Match(TokenType.And) || Match(TokenType.Or) || Match(TokenType.Xor))
+               ||  Match(TokenType.And) || Match(TokenType.Or) || Match(TokenType.Xor)
+               ||  Match(TokenType.And_And) || Match(TokenType.Or_Or) || Match(TokenType.Xor_Xor))
             {
                 Token Token = Advance();
                 Higher = new BinaryExpr(Higher, ParseTerm(), Token.Type);
@@ -374,7 +340,7 @@ namespace BadLang
                     return new InputExpr(Advance().Type);
 
                 default:
-                    throw new Exception("Unexpected token: \'" + Peek().Type + "\' at line " + Peek().Line + ".");
+                    throw new Exception(string.Format("Parser error: Unexpected token: '{0}' at line {1}.", Peek().Type, Peek().Line));
             }
         }
         #endregion
@@ -404,7 +370,7 @@ namespace BadLang
             }
             else
             {
-                throw new Exception("Unexpected token: \'" + tokens[current - 1].Type + "\' at line " + tokens[current - 1].Line + ".");
+                throw new Exception(string.Format("Parser error: Unexpected token: '{0}' at line {1}.", tokens[current - 1].Type, tokens[current - 1].Line));
             }
         }
 
