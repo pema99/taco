@@ -15,7 +15,7 @@ namespace BadLang
                         ast.Instructions[link.Item2 + 1] = new Variant(symbol);
                         break;
 
-                    case Instruction.JMP_IF_NOT:
+                    case Instruction.JMP_COND:
                         ast.Instructions[link.Item2 + 1] = new Variant(symbol);
                         break;
                 }

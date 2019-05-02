@@ -8,15 +8,19 @@ namespace BadLang
     {
         private Stack<Variant> stack;
         private Stack<int> callStack;
-        private Variant[] variables;
+        private Stack<int> parametersStack;
+        private Variant[] varStack;
+        private int varStackOffset;
         private byte[] heap;
 
         public void Execute(Binary b)
         {
             this.stack = new Stack<Variant>();
             this.callStack = new Stack<int>();
+            this.parametersStack = new Stack<int>();
+            this.varStack = new Variant[1000];
+            this.varStackOffset = 0;
             this.heap = b.Heap;
-            this.variables = new Variant[1000];
 
             Console.WriteLine("=== Execution start ===");
 
@@ -59,11 +63,11 @@ namespace BadLang
                         break;
 
                     case Instruction.VAR_ASSIGN:
-                        variables[b.Instructions[++pc].Pointer] = stack.Pop();
+                        varStack[varStackOffset - parametersStack.Peek() + b.Instructions[++pc].Pointer] = stack.Pop();
                         break;
 
                     case Instruction.VAR_LOOKUP:
-                        stack.Push(variables[b.Instructions[++pc].Pointer]);
+                        stack.Push(varStack[varStackOffset - parametersStack.Peek() + b.Instructions[++pc].Pointer]);
                         break;
 
                     case Instruction.ADD:
@@ -120,6 +124,19 @@ namespace BadLang
                             return;
                         }
                         pc = callStack.Pop();
+
+                        varStackOffset -= parametersStack.Pop(); //IS THIS RIGHT
+                        break;
+
+                    case Instruction.PUSH_PARAMS:
+                        int newPc = ++pc;
+                        int numParams = b.Instructions[newPc].Pointer;
+                        for (int i = 0; i < numParams; i++)
+                        {
+                            varStack[varStackOffset + i] = stack.Pop();
+                        }
+                        varStackOffset += numParams; //IS THIS RIGHT? TODO
+                        parametersStack.Push(numParams);
                         break;
 
                     case Instruction.CALL:
@@ -127,7 +144,7 @@ namespace BadLang
                         pc = b.Instructions[pc + 1].Pointer - 1;
                         break;
 
-                    case Instruction.JMP_IF_NOT:
+                    case Instruction.JMP_COND:
                         Variant cond = stack.Pop();
                         if (cond.Pointer == 0)
                         {

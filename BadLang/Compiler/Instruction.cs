@@ -23,13 +23,13 @@ namespace BadLang
         EQUAL,
 
         JMP,
-        JMP_IF,
-        JMP_IF_NOT,
+        JMP_COND,
 
         CLS,
         INPUT_KEY,
         INPUT_LINE,
 
+        PUSH_PARAMS,
         RETURN,
     }
 
@@ -57,12 +57,12 @@ namespace BadLang
 
             1,
             1,
+
+            0,
+            0,
+            0,
+
             1,
-
-            0,
-            0,
-            0,
-
             0,
         };
     }

@@ -29,10 +29,7 @@ namespace BadLang
             {
                 symbols.Add(func.Name, instructions.Count);;
 
-                for (int i = 0; i < func.Parameters.Length; i++)
-                {
-                    AddInstruction(Instruction.VAR_ASSIGN, new Variant(i));
-                }
+                AddInstruction(Instruction.PUSH_PARAMS, new Variant(func.Parameters.Length));
 
                 foreach (Expression statement in func.Body.Statements)
                 {
@@ -145,7 +142,7 @@ namespace BadLang
                 case ConditionalExpr e:
                     CompileExpression(e.Condition, scope);
 
-                    AddInstruction(Instruction.JMP_IF_NOT, 0);
+                    AddInstruction(Instruction.JMP_COND, 0);
 
                     string label = "_" + tempLabelNum++;
 
