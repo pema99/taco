@@ -1,0 +1,7 @@
+﻿func main() {
+	var a = 4
+	a -= 2
+	print a
+	a = 7
+	print a
+}
