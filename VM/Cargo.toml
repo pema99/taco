@@ -1,5 +1,5 @@
 [package]
-name = "taco_vm"
+name = "taco-vm"
 version = "0.1.0"
 authors = ["pema99 <pemamalling@gmail.com>"]
 edition = "2018"
