@@ -1,152 +1,11 @@
-use std::mem::transmute;
-use std::io::prelude::*;
-use std::fs::File;
-use byteorder::{LittleEndian, ReadBytesExt};
-use num_derive::{FromPrimitive, ToPrimitive};
 use num;
 
-#[repr(i32)]
-#[derive(FromPrimitive, ToPrimitive)]
-#[derive(Debug)]
-enum Instruction {
-    VAR_ASSIGN,
-    VAR_LOOKUP,
-    CONST,
+use super::instructions::*;
+use super::variant::*;
+use super::binary::*;
 
-    CALL,
-
-    PRINT,
-    PRINTLN,
-
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-
-    LESS,
-    GREATER,
-    EQUAL,
-
-    JMP,
-    JMP_COND,
-
-    CLS,
-    INPUT_KEY,
-    INPUT_LINE,
-
-    PUSH_PARAMS,
-    RETURN
-}
-
-#[repr(i32)]
-#[derive(Clone)]
-enum VariantType {
-    Number,
-    Boolean,
-    Pointer
-}
-
-#[derive(Copy)]
-#[derive(Clone)]
-union VariantValue {
-    number: f32,
-    boolean: bool,
-    pointer: i32
-}
-
-#[repr(C)]
-#[derive(Clone)]
-struct Variant {
-    value_type: VariantType,
-    value: VariantValue
-}
-
-impl Variant {
-    fn from_number(number: f32) -> Self {
-        Self {
-            value_type: VariantType::Number,
-            value: VariantValue { number: number }
-        }
-    }
-
-    fn to_number(&self) -> f32 {
-        unsafe {
-            self.value.number
-        }
-    }
-
-    fn from_boolean(boolean: bool) -> Self {
-        Self {
-            value_type: VariantType::Boolean,
-            value: VariantValue { pointer: if boolean { 1 } else { 0 } }
-        }
-    }
-
-    fn to_boolean(&self) -> bool {
-        unsafe {
-            self.value.boolean
-        }
-    }
-
-    fn from_pointer(pointer: i32) -> Self {
-        Self {
-            value_type: VariantType::Pointer,
-            value: VariantValue { pointer: pointer }
-        }
-    }
-
-    fn to_pointer(&self) -> i32 {
-        unsafe {
-            self.value.pointer
-        }
-    }
-
-
-    fn from_long(long: i64) -> Self {
-        return unsafe {
-            transmute (long)
-        }
-    }
-
-    fn to_long(&self) -> i64 {
-        return unsafe {
-            transmute(self.clone())
-        }
-    }
-}
-
-pub struct Binary {
-    instructions: Box<Vec<i64>>,
-    entry: usize,
-    heap: [u8; HEAP_SIZE]
-}
-
-impl Binary {
-    pub fn from_file(path: &str) -> Result<Self, String> {
-        let mut f = File::open(path).unwrap();
-
-        let entry = f.read_i32::<LittleEndian>().unwrap();
-
-        let mut heap = [0; HEAP_SIZE];
-        f.read_exact(&mut heap).unwrap();
-
-        let mut instructions : Vec<i64> = Vec::new();
-        let mut buffer : [u8; 8] = [0; 8];
-        
-        while let Ok(x) = f.read_exact(&mut buffer) {          
-            instructions.push(i64::from_le_bytes(buffer));
-        }
-
-        Ok(Binary {
-            instructions: Box::new(instructions),
-            entry: entry as usize,
-            heap: heap
-        })
-    }
-}
-
-const VAR_STACK_SIZE : usize = 1000;
-const HEAP_SIZE : usize = 1000;
+pub const VAR_STACK_SIZE : usize = 1000;
+pub const HEAP_SIZE : usize = 1000;
 
 pub struct VM {
     stack: Vec<i64>,
@@ -185,7 +44,7 @@ impl VM {
                         VariantType::Number => operand.to_number().to_string(),
                         VariantType::Pointer => {
                             /*let ptr = operand.to_pointer() as usize;
-                            let str_len = i32::from_le_bytes(self.heap[ptr..ptr+4]);*/
+                            let str_len = i32::from_le_bytes(self.heap[ptr..ptr+4]);*/ //FIXME: Implement strings again uwu
                             "".to_owned()
                         }
                     };
@@ -200,11 +59,13 @@ impl VM {
                 },
                 Instruction::VAR_ASSIGN => {
                     pc += 1;
-                    self.var_stack[self.var_stack_offset - self.parameter_stack.last().unwrap() + Variant::from_long(bin.instructions[pc]).to_pointer() as usize] = self.stack.pop().unwrap();
+                    let var_index = self.var_stack_offset - self.parameter_stack.last().unwrap() + Variant::from_long(bin.instructions[pc]).to_pointer() as usize;
+                    self.var_stack[var_index] = self.stack.pop().unwrap();
                 },
                 Instruction::VAR_LOOKUP => {
                     pc += 1;
-                    self.stack.push(self.var_stack[self.var_stack_offset - self.parameter_stack.last().unwrap() + Variant::from_long(bin.instructions[pc]).to_pointer() as usize]);
+                    let var_index = self.var_stack_offset - self.parameter_stack.last().unwrap() + Variant::from_long(bin.instructions[pc]).to_pointer() as usize;
+                    self.stack.push(self.var_stack[var_index]);
                 },
                 Instruction::ADD | Instruction::SUB | Instruction::MUL | Instruction::DIV |
                 Instruction::LESS | Instruction::GREATER | Instruction::EQUAL => {
