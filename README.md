@@ -7,4 +7,6 @@ It spits out proprietary bytecode
 
 The VM is written in rust
 
+Unfinished, obviously
+
 Pog
