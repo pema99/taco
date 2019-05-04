@@ -4,15 +4,16 @@
 #[allow(unused_variables)]
 #[allow(dead_code)]
 
-use std::time::Instant;
+use std::env;
 
 pub mod vm;
 
 fn main() {
-    let mut x = vm::VM::new();
-    let b = vm::Binary::from_file("out.bin").unwrap();
-    let now = Instant::now();
-    x.execute(b);
-    println!("");
-    println!("Execution took {}ms", now.elapsed().as_millis());
+    let args: Vec<String> = env::args().collect();
+    if (args.len() != 2) {
+        println!("Usage: taco-vm <binary path>");
+    }
+    else {
+        vm::VM::new().execute(vm::Binary::from_file(&args[1]).unwrap());
+    }
 }

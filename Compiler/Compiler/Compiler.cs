@@ -22,7 +22,7 @@ namespace TacoCompiler
             UnlinkedAST ir = codeGenerator.Process(semantic.Process(ast));           
             Binary b = linker.Process(ir);
 
-            Console.WriteLine("=== Symbols ===");
+            /*Console.WriteLine("=== Symbols ===");
             foreach (var symbol in ir.Symbols)
             {
                 Console.WriteLine(symbol.Key + ": " + symbol.Value);
@@ -49,7 +49,7 @@ namespace TacoCompiler
                 }
                 Console.WriteLine();
             }
-            Console.WriteLine();
+            Console.WriteLine();*/
 
             return b;
         }

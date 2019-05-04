@@ -170,8 +170,6 @@ impl VM {
     }
 
     pub fn execute(&mut self, bin: Binary) {
-        println!("=== Execution start ===");
-
         self.heap = bin.heap;
         let mut pc = bin.entry;
 

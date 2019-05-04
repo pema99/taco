@@ -1,34 +1,33 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace TacoCompiler
 {
     public class Program
     {
-        public static void Main()
+        public static void Main(string[] args)
         {
-            Lexer l = new Lexer();
-            Parser p = new Parser();
-            var o = p.Parse(l.ScanTokens(File.ReadAllText("example.bl")));
-            Binary b = new Compiler().Compile(o);
-            Stopwatch s = Stopwatch.StartNew();
-            new VM().Execute(b);
-            s.Stop();
-            Console.WriteLine();
-            Console.WriteLine("Execution took " + s.ElapsedMilliseconds + "ms");
-            Console.ReadKey();
-
-            using (FileStream fs = new FileStream("out.bin", FileMode.OpenOrCreate))
+            if (args.Length != 2)
             {
-                using (BinaryWriter bw = new BinaryWriter(fs))
+                Console.WriteLine("Usage: TacoCompiler <source file path> <output file path>");
+            }
+            else
+            {
+                Lexer lexer = new Lexer();
+                Parser parser = new Parser();
+                Compiler compiler = new Compiler();
+                Binary b = compiler.Compile(parser.Parse(lexer.ScanTokens(File.ReadAllText(args[0]))));
+
+                using (FileStream fs = new FileStream(args[1], FileMode.OpenOrCreate))
                 {
-                    bw.Write(b.EntryPoint);
-                    bw.Write(b.Heap);
-                    foreach (var instr in b.Instructions)
+                    using (BinaryWriter bw = new BinaryWriter(fs))
                     {
-                        bw.Write(instr.Bits);
+                        bw.Write(b.EntryPoint);
+                        bw.Write(b.Heap);
+                        foreach (var instr in b.Instructions)
+                        {
+                            bw.Write(instr.Bits);
+                        }
                     }
                 }
             }
