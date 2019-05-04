@@ -19,6 +19,19 @@ namespace BadLang
             Console.WriteLine();
             Console.WriteLine("Execution took " + s.ElapsedMilliseconds + "ms");
             Console.ReadKey();
+
+            using (FileStream fs = new FileStream("out.bin", FileMode.OpenOrCreate))
+            {
+                using (BinaryWriter bw = new BinaryWriter(fs))
+                {
+                    bw.Write(b.EntryPoint);
+                    bw.Write(b.Heap);
+                    foreach (var instr in b.Instructions)
+                    {
+                        bw.Write(instr.Bits);
+                    }
+                }
+            }
         }
     }
 }

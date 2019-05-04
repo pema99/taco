@@ -1,9 +1,5 @@
 ﻿func main() {
-	var n = 30
-	print "Fib of "
-	print n
-	print " = "
-	print fib(30)
+	print fib(35)
 	return 0
 }
 
