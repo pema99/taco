@@ -1,4 +1,6 @@
 use num;
+use byteorder::{LittleEndian, ByteOrder};
+use std::str;
 
 use super::instructions::*;
 use super::variant::*;
@@ -43,9 +45,9 @@ impl VM {
                         VariantType::Boolean => operand.to_boolean().to_string(),
                         VariantType::Number => operand.to_number().to_string(),
                         VariantType::Pointer => {
-                            /*let ptr = operand.to_pointer() as usize;
-                            let str_len = i32::from_le_bytes(self.heap[ptr..ptr+4]);*/ //FIXME: Implement strings again uwu
-                            "".to_owned()
+                            let ptr = operand.to_pointer() as usize;
+                            let str_len = LittleEndian::read_i32(&self.heap[ptr..ptr+4]) as usize;
+                            str::from_utf8(&self.heap[ptr+4..ptr+4+str_len]).unwrap().to_owned()
                         }
                     };
                     print!("{}", to_print);
@@ -73,15 +75,19 @@ impl VM {
                     let left = Variant::from_long(self.stack.pop().unwrap());
                     
                     if let VariantType::Number = left.value_type {
-                        match current {
-                            Instruction::ADD => self.stack.push(Variant::from_number(left.to_number() + right.to_number()).to_long()),
-                            Instruction::SUB => self.stack.push(Variant::from_number(left.to_number() - right.to_number()).to_long()),
-                            Instruction::MUL => self.stack.push(Variant::from_number(left.to_number() * right.to_number()).to_long()),
-                            Instruction::DIV => self.stack.push(Variant::from_number(left.to_number() / right.to_number()).to_long()),
-                            Instruction::LESS => self.stack.push(Variant::from_boolean(left.to_number() < right.to_number()).to_long()),
-                            Instruction::GREATER => self.stack.push(Variant::from_boolean(left.to_number() > right.to_number()).to_long()),
-                            Instruction::EQUAL => self.stack.push(Variant::from_boolean(left.to_number() == right.to_number()).to_long()),
-                            _ => {}
+                        if let VariantType::Number = right.value_type {
+                            let left_num = left.to_number();
+                            let right_num = right.to_number();
+                            self.stack.push(match current {
+                                Instruction::ADD => Variant::from_number(left_num + right_num).to_long(),
+                                Instruction::SUB => Variant::from_number(left_num - right_num).to_long(),
+                                Instruction::MUL => Variant::from_number(left_num * right_num).to_long(),
+                                Instruction::DIV => Variant::from_number(left_num / right_num).to_long(),
+                                Instruction::LESS => Variant::from_boolean(left_num < right_num).to_long(),
+                                Instruction::GREATER => Variant::from_boolean(left_num > right_num).to_long(),
+                                Instruction::EQUAL => Variant::from_boolean(left_num == right_num).to_long(),
+                                _ => panic!("This should never happen")
+                            });
                         }
                     }
                 },

@@ -1,5 +1,9 @@
 ﻿func main() {
-	println fib(40)
+	var n = 10
+	print "Fib("
+	print n
+	print ") = "
+	println fib(n)
 	return 0
 }
 
